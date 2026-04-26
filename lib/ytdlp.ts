@@ -71,16 +71,32 @@ export interface PlaylistDownloadTask {
 
 const DOWNLOADS_DIR = path.join(process.cwd(), 'downloads');
 const TEMP_DIR = path.join(process.cwd(), 'temp');
+const COOKIES_PATH = path.join(DOWNLOADS_DIR, 'cookies.txt');
 
-// Ensure directories exist
 if (!fs.existsSync(DOWNLOADS_DIR)) fs.mkdirSync(DOWNLOADS_DIR, { recursive: true });
 if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR, { recursive: true });
+
+export function getCookiesPath(): string {
+  return COOKIES_PATH;
+}
+
+export function hasCookies(): boolean {
+  return fs.existsSync(COOKIES_PATH);
+}
+
+function cookiesArgs(): string[] {
+  return hasCookies() ? ['--cookies', COOKIES_PATH] : [];
+}
+
+function cookiesFlag(): string {
+  return hasCookies() ? `--cookies "${COOKIES_PATH}"` : '';
+}
 
 export async function getVideoInfo(url: string): Promise<VideoInfo> {
   const isPlaylist = url.includes('playlist') || url.includes('list=');
   
   const { stdout } = await execAsync(
-    `yt-dlp --dump-json --no-playlist "${url}"`,
+    `yt-dlp ${cookiesFlag()} --dump-json --no-playlist "${url}"`,
     { maxBuffer: 50 * 1024 * 1024 }
   );
   
@@ -114,13 +130,13 @@ export async function getVideoInfo(url: string): Promise<VideoInfo> {
   if (url.includes('list=')) {
     try {
       const { stdout: playlistStd } = await execAsync(
-        `yt-dlp --dump-json --flat-playlist --playlist-items 1 "${url}"`,
+        `yt-dlp ${cookiesFlag()} --dump-json --flat-playlist --playlist-items 1 "${url}"`,
         { maxBuffer: 50 * 1024 * 1024 }
       );
       const playlistData = JSON.parse(playlistStd);
       
       const { stdout: fullStd } = await execAsync(
-        `yt-dlp --dump-json --flat-playlist --playlist-end 100 "${url}"`,
+        `yt-dlp ${cookiesFlag()} --dump-json --flat-playlist --playlist-end 100 "${url}"`,
         { maxBuffer: 50 * 1024 * 1024 }
       );
       
@@ -174,6 +190,7 @@ export async function downloadVideo(
   
   return new Promise((resolve, reject) => {
     const args = [
+      ...cookiesArgs(),
       '-f', format,
       '--merge-output-format', 'mp4',
       '--newline',
@@ -242,6 +259,7 @@ export async function downloadAudio(
   
   return new Promise((resolve, reject) => {
     const args = [
+      ...cookiesArgs(),
       '-x',
       '--audio-format', 'mp3',
       '--audio-quality', '0',
@@ -314,7 +332,7 @@ export async function downloadPlaylist(
   }
 
   return new Promise((resolve, reject) => {
-    const args: string[] = [];
+    const args: string[] = [...cookiesArgs()];
 
     if (type === 'audio') {
       args.push('-x', '--audio-format', 'mp3', '--audio-quality', '0');

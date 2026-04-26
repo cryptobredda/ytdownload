@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import VideoPreview from '@/components/VideoPreview';
 import DownloadTasks from '@/components/DownloadTasks';
 import { VideoInfo, DownloadTask, PlaylistDownloadTask } from '@/lib/types';
@@ -15,6 +15,24 @@ export default function Home() {
   const [tasks, setTasks] = useState<(DownloadTask | PlaylistDownloadTask)[]>([]);
   const [downloading, setDownloading] = useState(false);
   const [playlistLimit, setPlaylistLimit] = useState<number>(0);
+  const [hasCookies, setHasCookies] = useState(false);
+  const [showCookies, setShowCookies] = useState(false);
+  const [uploadingCookies, setUploadingCookies] = useState(false);
+  const cookiesInputRef = useRef<HTMLInputElement>(null);
+
+  const checkCookies = useCallback(async () => {
+    try {
+      const res = await fetch('/api/cookies');
+      if (res.ok) {
+        const data = await res.json();
+        setHasCookies(data.hasCookies);
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    checkCookies();
+  }, [checkCookies]);
 
   useEffect(() => {
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -121,6 +139,32 @@ export default function Home() {
     return presets.filter((p) => p < totalCount);
   };
 
+  const uploadCookies = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingCookies(true);
+    try {
+      const formData = new FormData();
+      formData.append('cookies', file);
+      const res = await fetch('/api/cookies', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setHasCookies(true);
+      setShowCookies(false);
+    } catch (err: any) {
+      alert(err.message || 'Failed to upload cookies');
+    } finally {
+      setUploadingCookies(false);
+      if (cookiesInputRef.current) cookiesInputRef.current.value = '';
+    }
+  };
+
+  const deleteCookies = async () => {
+    await fetch('/api/cookies', { method: 'DELETE' });
+    setHasCookies(false);
+    setShowCookies(false);
+  };
+
   return (
     <main className="min-h-screen bg-[#0f0f0f]">
       {/* Header */}
@@ -135,6 +179,69 @@ export default function Home() {
               </svg>
             </div>
             <span className="text-lg font-bold tracking-tight">YTD</span>
+          </div>
+
+          <div className="flex-1" />
+
+          {/* Cookies */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowCookies(!showCookies)}
+              className={`h-8 px-3 rounded-full text-xs font-medium transition-colors flex items-center gap-2 ${
+                hasCookies
+                  ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
+                  : 'bg-[#272727] text-[#aaaaaa] hover:bg-[#3f3f3f] hover:text-white'
+              }`}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <title>Cookies</title>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              {hasCookies ? 'Authenticated' : 'Cookies'}
+            </button>
+
+            {showCookies && (
+              <>
+                <div className="fixed inset-0 z-40" onKeyUp={() => {}} onKeyDown={() => setShowCookies(false)} role="button" tabIndex={-1} onClick={() => setShowCookies(false)} />
+                <div className="absolute right-0 top-full mt-2 w-72 bg-[#1f1f1f] border border-[#303030] rounded-xl p-4 z-50 shadow-xl">
+                  <p className="text-sm text-white font-medium mb-2">YouTube Cookies</p>
+                  <p className="text-xs text-[#888] mb-4 leading-relaxed">
+                    {hasCookies
+                      ? 'Cookies are active. YouTube requests will use your authentication.'
+                      : 'Upload cookies from your browser to bypass bot detection. Use a browser extension like "Get cookies.txt LOCALLY" to export YouTube cookies in Netscape format.'}
+                  </p>
+
+                  {hasCookies ? (
+                    <button
+                      type="button"
+                      onClick={deleteCookies}
+                      className="w-full h-8 bg-[#272727] hover:bg-[#3f3f3f] text-[#ff6b6b] rounded-lg text-xs font-medium transition-colors"
+                    >
+                      Remove Cookies
+                    </button>
+                  ) : (
+                    <>
+                      <input
+                        ref={cookiesInputRef}
+                        type="file"
+                        accept=".txt,.txt"
+                        onChange={uploadCookies}
+                        className="hidden"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => cookiesInputRef.current?.click()}
+                        disabled={uploadingCookies}
+                        className="w-full h-8 bg-[#272727] hover:bg-[#3f3f3f] text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+                      >
+                        {uploadingCookies ? 'Uploading...' : 'Upload cookies.txt'}
+                      </button>
+                    </>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </header>
