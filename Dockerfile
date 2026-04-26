@@ -6,7 +6,8 @@ RUN apt-get update && \
     python3-pip \
     ffmpeg \
     curl \
-    unzip && \
+    unzip \
+    chromium && \
     pip3 install --break-system-packages yt-dlp && \
     rm -rf /var/lib/apt/lists/* /root/.cache/pip && \
     ln -sf /usr/bin/python3 /usr/bin/python
@@ -17,6 +18,8 @@ RUN curl -fsSL https://deno.land/install.sh | sh && \
 
 RUN yt-dlp --version && ffmpeg -version | head -1 && deno --version && \
     yt-dlp --remote-components ejs:github --skip-download "https://www.youtube.com/watch?v=dQw4w9WgXcQ" 2>/dev/null || true
+
+ENV CHROMIUM_PATH=/usr/bin/chromium
 
 WORKDIR /app
 
