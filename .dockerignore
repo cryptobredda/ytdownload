@@ -6,3 +6,12 @@ temp/
 .env
 .env.local
 .DS_Store
+.git/
+.gitignore
+README.md
+COOLIFY.md
+INSTALL-YTDL.md
+QUICKSTART.md
+PROJECT_SUMMARY.md
+CLAUDE.md
+AGENTS.md

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   ytdownload:
     build:
@@ -8,24 +6,19 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      # Persistent storage for downloads
       - ytdown-downloads:/app/downloads
       - ytdown-temp:/app/temp
     environment:
       - NODE_ENV=production
       - PORT=3000
-      # Optional: Set max download size (in MB)
-      # - MAX_DOWNLOAD_SIZE=1024
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      test: ["CMD-SHELL", "curl -f http://localhost:3000 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
 
 volumes:
   ytdown-downloads:
-    driver: local
   ytdown-temp:
-    driver: local
