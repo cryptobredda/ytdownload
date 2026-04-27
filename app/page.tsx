@@ -204,28 +204,38 @@ export default function Home() {
             {showCookies && (
               <>
                 <div className="fixed inset-0 z-40" onKeyUp={() => {}} onKeyDown={() => setShowCookies(false)} role="button" tabIndex={-1} onClick={() => setShowCookies(false)} />
-                <div className="absolute right-0 top-full mt-2 w-72 bg-[#1f1f1f] border border-[#303030] rounded-xl p-4 z-50 shadow-xl">
-                  <p className="text-sm text-white font-medium mb-2">YouTube Cookies</p>
-                  <p className="text-xs text-[#888] mb-4 leading-relaxed">
-                    {hasCookies
-                      ? 'Cookies are active. YouTube requests will use your authentication.'
-                      : 'Upload cookies from your browser to bypass bot detection. Use a browser extension like "Get cookies.txt LOCALLY" to export YouTube cookies in Netscape format.'}
-                  </p>
+                <div className="absolute right-0 top-full mt-2 w-80 bg-[#1f1f1f] border border-[#303030] rounded-xl p-4 z-50 shadow-xl">
+                  <p className="text-sm text-white font-medium mb-3">YouTube Authentication</p>
 
                   {hasCookies ? (
-                    <button
-                      type="button"
-                      onClick={deleteCookies}
-                      className="w-full h-8 bg-[#272727] hover:bg-[#3f3f3f] text-[#ff6b6b] rounded-lg text-xs font-medium transition-colors"
-                    >
-                      Remove Cookies
-                    </button>
+                    <>
+                      <p className="text-xs text-[#888] mb-4 leading-relaxed">
+                        Cookies are active. Downloads will use your YouTube session. Cookies last a long time but may need to be re-uploaded if downloads start failing.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={deleteCookies}
+                        className="w-full h-8 bg-[#272727] hover:bg-[#3f3f3f] text-[#ff6b6b] rounded-lg text-xs font-medium transition-colors"
+                      >
+                        Remove Cookies
+                      </button>
+                    </>
                   ) : (
                     <>
+                      <div className="text-xs text-[#888] leading-relaxed mb-4 space-y-2">
+                        <p>Required when running on a server IP. You need to export cookies from a browser where you're <strong className="text-white">logged into YouTube</strong>.</p>
+                        <ol className="list-decimal list-inside space-y-1.5 text-[#aaaaaa]">
+                          <li>Install <strong className="text-white">"Get cookies.txt LOCALLY"</strong> browser extension</li>
+                          <li>Make sure you're logged into YouTube in that browser</li>
+                          <li>Click the extension on any YouTube page and export</li>
+                          <li>Upload the <code className="text-white bg-[#272727] px-1 rounded">cookies.txt</code> file below</li>
+                        </ol>
+                      </div>
+
                       <input
                         ref={cookiesInputRef}
                         type="file"
-                        accept=".txt,.txt"
+                        accept=".txt"
                         onChange={uploadCookies}
                         className="hidden"
                       />
